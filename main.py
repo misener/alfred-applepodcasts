@@ -17,7 +17,14 @@ def search(query):
 
 def main(wf):
     query = wf.args[0]
-    
+
+    if wf.update_available:
+        # Add a notification to top of Script Filter results
+        wf.add_item('New version available',
+                    'Action this item to install the update',
+                    autocomplete='workflow:update',
+                    icon=ICON_INFO)
+
     # Cache the results of our search for 1 minute so wf.rerun doesn't keep hitting the API
     podcasts = wf.cached_data(name=query, data_func=lambda: search(query), max_age=60)
 
@@ -61,5 +68,5 @@ def main(wf):
 
 
 if __name__ == '__main__':
-    wf = Workflow3()
+    wf = Workflow3(update_settings={'github_slug': 'misener/alfred-applepodcasts'})
     sys.exit(wf.run(main))
