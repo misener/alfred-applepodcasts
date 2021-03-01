@@ -37,11 +37,19 @@ def main(wf):
 
     # TODO: add website as an option: move episode fetch earlier, and use the [0]['websiteUrl'] value
 
+    # series.add_modifier(key='ctrl',
+    #                     subtitle=u'Search for {collectionName} in Spotify'.format(
+    #                         **podcast),
+    #                     icon='icons/spotify.png',
+    #                     arg=u"https://open.spotify.com/search/{collectionName}".format(
+    #                         **podcast),
+    #                     valid=True)
+
     series.add_modifier(key='ctrl',
-                        subtitle=u'Search for {collectionName} in Spotify'.format(
+                        subtitle=u'Open {collectionName} in PodLink'.format(
                             **podcast),
-                        icon='icons/spotify.png',
-                        arg=u"https://open.spotify.com/search/{collectionName}".format(
+                        icon='icons/podlink.jpg',
+                        arg=u"https://pod.link/{collectionId}".format(
                             **podcast),
                         valid=True)
 
