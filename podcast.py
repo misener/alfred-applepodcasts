@@ -6,7 +6,7 @@ import sys
 import json
 import base64
 from urllib import unquote
-from workflow import Workflow3, ICON_WEB, web
+from workflow import Workflow3, ICON_WEB, ICON_INFO, web
 from update_opawg_data import get_opawg_data
 import base64
 from workflow.background import run_in_background, is_running, kill
@@ -17,10 +17,6 @@ def string_boolean_to_emoji(string):
 
 
 def main(wf):
-    # If we've selected a show, we can stop updating artwork for series we can
-    # no longer see
-    # if is_running('update_artwork'):
-    #     kill('update_artwork')
 
     podcast = json.loads(wf.args[0])
 
@@ -37,14 +33,6 @@ def main(wf):
 
     # TODO: add website as an option: move episode fetch earlier, and use the [0]['websiteUrl'] value
 
-    # series.add_modifier(key='ctrl',
-    #                     subtitle=u'Search for {collectionName} in Spotify'.format(
-    #                         **podcast),
-    #                     icon='icons/spotify.png',
-    #                     arg=u"https://open.spotify.com/search/{collectionName}".format(
-    #                         **podcast),
-    #                     valid=True)
-
     series.add_modifier(key='ctrl',
                         subtitle=u'Open {collectionName} in PodLink'.format(
                             **podcast),
@@ -53,7 +41,6 @@ def main(wf):
                             **podcast),
                         valid=True)
 
-
     series.add_modifier(key='cmd',
                         subtitle='Open in Podchaser',
                         icon='icons/podchaser.png',
@@ -61,14 +48,14 @@ def main(wf):
                             podcast['collectionId']),
                         valid=True)
 
-
     if 'feedUrl' in podcast:
         series.add_modifier(key='alt',
                             subtitle='Open in Google Podcasts',
                             icon='icons/google.png',
-                            arg = "https://podcasts.google.com/feed/{}".format(
-                                base64.urlsafe_b64encode(podcast['feedUrl'].encode("utf-8"))
-                            ), 
+                            arg="https://podcasts.google.com/feed/{}".format(
+                                base64.urlsafe_b64encode(
+                                    podcast['feedUrl'].encode("utf-8"))
+                            ),
                             valid=True)
 
         wf.add_item(title="RSS",
@@ -85,17 +72,14 @@ def main(wf):
                 valid=True,
                 arg=artwork_url,
                 copytext=artwork_url,
-                icon=wf.cached_data(name=podcast['trackId'],
-                                    # data_func=lambda: get_artwork(
-                                    #     result=podcast, cache_directory=wf.cachedir),
-                                    max_age=3600)
+                icon=ICON_WEB,
                 )
 
     series_metadata = wf.add_item(title="Apple Podcasts ID",
                                   subtitle="Podcast ID: {collectionId}".format(
                                       **podcast),
                                   copytext=podcast['collectionId'],
-                                  icon='icons/barcode.png',
+                                  icon=ICON_INFO,
                                   )
 
     if 'artistId' in podcast:
@@ -110,8 +94,8 @@ def main(wf):
     # Is episode cache over 5 minutes old or non-existent?
     if not wf.cached_data_fresh("{}_episodes_metadata".format(podcast['collectionId']), 300):
         run_in_background('update_podcast_episodes',
-                ['/usr/bin/python',
-                wf.workflowfile('update_podcast_episodes.py')])
+                          ['/usr/bin/python',
+                           wf.workflowfile('update_podcast_episodes.py')])
 
     if is_running('update_podcast_episodes'):
         wf.rerun = 0.5
@@ -119,7 +103,8 @@ def main(wf):
                     valid=False,
                     )
 
-    episodes = wf.cached_data(name="{}_episodes_metadata".format(podcast['collectionId'], max_age=0))
+    episodes = wf.cached_data(name="{}_episodes_metadata".format(
+        podcast['collectionId'], max_age=0))
 
     if episodes:
         # OPAWG host data
@@ -127,7 +112,7 @@ def main(wf):
         hosts_json = wf.cached_data(name='opawg_hosts', max_age=0)
 
         host = next((host for host in hosts_json
-                    if host['regex'].search(episodes[0]['episodeUrl'])), None)
+                     if host['regex'].search(episodes[0]['episodeUrl'])), None)
 
         if host:
             wf.add_item(title="Audio hosted by {hostname}".format(**host),
@@ -137,7 +122,7 @@ def main(wf):
                         )
                             for k, v in host.items()
                             if k.startswith('abilities_')]),
-                        icon='icons/server.png',
+                        icon=ICON_INFO,
                         arg=host['hosturl'],
                         valid=True
                         )
@@ -149,52 +134,32 @@ def main(wf):
         wf.logger.warning(episodes[0])
 
         installed_prefixes = [prefix for prefix
-                            in prefixes_json
-                            if prefix['regex'].search(episodes[0]['episodeUrl'])]
+                              in prefixes_json
+                              if prefix['regex'].search(episodes[0]['episodeUrl'])]
 
         if len(installed_prefixes) > 0:
             prefix_names = [prefix['prefixname']
                             for prefix
                             in installed_prefixes]
 
-            wf.add_item(title="Prefixes: {}".format(", ".join(prefix_names)))
+            wf.add_item(title="Prefixes: {}".format(", ".join(prefix_names)),
+                        icon=ICON_INFO)
 
     if episodes:
         for episode in episodes:
-            # artwork_path = wf.cached_data(name=episode['trackId'],
-            #                             # data_func=lambda: get_artwork(
-            #                             #     result=episode, cache_directory=wf.cachedir),
-            #                             max_age=0)
-
             item = wf.add_item(title=episode['trackName'],
-                            subtitle=episode['episodeUrl'],
-                            #    uid=episode['attributes']['guid'],
-                            arg=episode['episodeUrl'],
-                            icon=ICON_WEB,
-                            # icon=artwork_path,
-                            valid=True,
-                            )
+                               subtitle=episode['episodeUrl'],
+                               #    uid=episode['attributes']['guid'],
+                               arg=episode['episodeUrl'],
+                               icon=ICON_WEB,
+                               valid=True,
+                               )
 
             item.add_modifier(key='cmd',
-                            subtitle='View episode in Apple Podcasts',
-                            arg=episode['trackViewUrl'],
-                            icon='icon.png',
-                            valid=True)
-
-
-        # Download episodic artwork in the background
-        episodes_with_missing_artwork = [ep for ep in episodes if not wf.cached_data_fresh(episode['trackId'], 3600)]    
-        wf.cache_data('entities_with_missing_artwork', episodes_with_missing_artwork)
-
-        if len(episodes_with_missing_artwork) > 0:
-            run_in_background('update_artwork',
-                    ['/usr/bin/python',
-                    wf.workflowfile('update_artwork.py')])
-
-        if is_running('update_artwork'):
-            wf.rerun = 0.5
-            wf.add_item('Fetching artwork...',
-                        valid=False)
+                              subtitle='View episode in Apple Podcasts',
+                              arg=episode['trackViewUrl'],
+                              icon='icon.png',
+                              valid=True)
 
     wf.send_feedback()
 

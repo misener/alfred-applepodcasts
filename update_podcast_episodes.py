@@ -8,7 +8,7 @@ def lookup_episodes(podcast):
         url="https://itunes.apple.com/lookup",
         params={"id": podcast.get('trackId'),
                 "entity": "podcastEpisode",
-                "limit": "3"}) # make this user-configurable?
+                "limit": "10"}) # make this user-configurable?
 
     lookup.raise_for_status()
     lookup_results = lookup.json()['results']
