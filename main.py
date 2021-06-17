@@ -5,7 +5,7 @@ import timeago
 from datetime import datetime
 import sys
 import json
-from workflow import Workflow3, web
+from workflow import Workflow3, web, ICON_INFO
 from workflow.background import run_in_background, is_running
 
 def search(query):
@@ -13,7 +13,7 @@ def search(query):
                        params={'media': 'podcast',
                                'term': query})
     podcasts.raise_for_status()
-    return podcasts.json()['results']  
+    return podcasts.json().get('results')
 
 def main(wf):
     query = wf.args[0]
@@ -52,17 +52,17 @@ def main(wf):
         run_in_background('update_opawg_data', ['/usr/bin/python', wf.workflowfile('update_opawg_data.py')])
 
     # Update series-level artwork in the background
-    podcasts_with_missing_artwork = [podcast for podcast in podcasts if not wf.cached_data_fresh(podcast['trackId'], 3600)]    
-    wf.cache_data('entities_with_missing_artwork', podcasts_with_missing_artwork)
+    # podcasts_with_missing_artwork = [podcast for podcast in podcasts if not wf.cached_data_fresh(podcast['trackId'], 3600)]    
+    # wf.cache_data('entities_with_missing_artwork', podcasts_with_missing_artwork)
 
-    if len(podcasts_with_missing_artwork) > 0:
-        run_in_background('update_artwork',
-                ['/usr/bin/python',
-                wf.workflowfile('update_artwork.py')])
+    # if len(podcasts_with_missing_artwork) > 0:
+    #     run_in_background('update_artwork',
+    #             ['/usr/bin/python',
+    #             wf.workflowfile('update_artwork.py')])
 
-    if is_running('update_artwork'):
-        wf.rerun = 0.5
-        wf.add_item('Fetching artwork...', valid=False)
+    # if is_running('update_artwork'):
+    #     wf.rerun = 0.5
+    #     wf.add_item('Fetching artwork...', valid=False)
 
     wf.send_feedback()
 

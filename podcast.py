@@ -19,8 +19,8 @@ def string_boolean_to_emoji(string):
 def main(wf):
     # If we've selected a show, we can stop updating artwork for series we can
     # no longer see
-    if is_running('update_artwork'):
-        kill('update_artwork')
+    # if is_running('update_artwork'):
+    #     kill('update_artwork')
 
     podcast = json.loads(wf.args[0])
 
@@ -86,8 +86,8 @@ def main(wf):
                 arg=artwork_url,
                 copytext=artwork_url,
                 icon=wf.cached_data(name=podcast['trackId'],
-                                    data_func=lambda: get_artwork(
-                                        result=podcast, cache_directory=wf.cachedir),
+                                    # data_func=lambda: get_artwork(
+                                    #     result=podcast, cache_directory=wf.cachedir),
                                     max_age=3600)
                 )
 
@@ -161,16 +161,17 @@ def main(wf):
 
     if episodes:
         for episode in episodes:
-            artwork_path = wf.cached_data(name=episode['trackId'],
-                                        # data_func=lambda: get_artwork(
-                                        #     result=episode, cache_directory=wf.cachedir),
-                                        max_age=0)
+            # artwork_path = wf.cached_data(name=episode['trackId'],
+            #                             # data_func=lambda: get_artwork(
+            #                             #     result=episode, cache_directory=wf.cachedir),
+            #                             max_age=0)
 
             item = wf.add_item(title=episode['trackName'],
                             subtitle=episode['episodeUrl'],
                             #    uid=episode['attributes']['guid'],
                             arg=episode['episodeUrl'],
-                            icon=artwork_path,
+                            icon=ICON_WEB,
+                            # icon=artwork_path,
                             valid=True,
                             )
 
